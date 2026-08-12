@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+pw.port
+pw.log

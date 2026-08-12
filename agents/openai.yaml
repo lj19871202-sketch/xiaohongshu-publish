@@ -1,0 +1,4 @@
+interface:
+  display_name: "小红书笔记发布"
+  short_description: "小红书笔记发布：收集校验内容、生成发布包、手动或半自动发布"
+  default_prompt: "使用 $xiaohongshu-publish 整理并发布小红书笔记：先收集校验标题/正文/话题/封面，再生成发布包并选择发布方式，发布前与用户确认。"
