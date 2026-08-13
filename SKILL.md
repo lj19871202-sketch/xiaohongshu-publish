@@ -71,8 +71,11 @@ description: 小红书笔记发布参考流程（内容由用户提供，不固�
 
 ## 脚本
 
+- `scripts/setup.ps1`：一键检查环境（Python 3 / Node.js / Edge）并把 `playwright-core` 安装到仓库本地
+  `node_modules`（需要联网）；首次使用前建议运行。
 - `scripts/build_publish_pack.py`：生成发布操作清单与直接复制版，并输出校验警告 + 待确认清单。示例：
   - 素材文件：`python build_publish_pack.py --source "<工作区>\小红书发布素材\01_工位免费3个月\01_工位免费3个月.txt" --time "明天 10:10"`
   - 直接传参：`python build_publish_pack.py --title "标题" --body "正文" --tags "#话题1 #话题2" --cover "封面.jpg" --theme "主题名" --num "02" --time "立即发布"`
 - `scripts/pw-bridge.cjs`：Playwright + Edge 调试端口桥接服务（js_repl 关闭时自动化发布用），用法见
-  [references/publish-paths.md](references/publish-paths.md) 方案三。
+  [references/publish-paths.md](references/publish-paths.md) 方案三；`playwright-core` 优先使用仓库本地
+  `node_modules`，其次自动探测 Codex 运行库，也可用环境变量 `PW_PLAYWRIGHT_MODULES` 指定。

@@ -11,13 +11,14 @@
 2. [功能特性 / Features](#2-功能特性--features)
 3. [目录结构 / Repository Structure](#3-目录结构--repository-structure)
 4. [安装 / Installation](#4-安装--installation)
-5. [使用方法 / Usage](#5-使用方法--usage)
-6. [标准流程 / Standard Workflow](#6-标准流程--standard-workflow)
-7. [发布方式 / Publishing Paths](#7-发布方式--publishing-paths)
-8. [脚本说明 / Scripts Reference](#8-脚本说明--scripts-reference)
-9. [关键规则 / Key Rules](#9-关键规则--key-rules)
-10. [本地化适配 / Localization](#10-本地化适配--localization)
-11. [协议 / License](#11-协议--license)
+5. [环境要求与快速安装 / Requirements & Quick Setup](#5-环境要求与快速安装--requirements--quick-setup)
+6. [使用方法 / Usage](#6-使用方法--usage)
+7. [标准流程 / Standard Workflow](#7-标准流程--standard-workflow)
+8. [发布方式 / Publishing Paths](#8-发布方式--publishing-paths)
+9. [脚本说明 / Scripts Reference](#9-脚本说明--scripts-reference)
+10. [关键规则 / Key Rules](#10-关键规则--key-rules)
+11. [本地化适配 / Localization](#11-本地化适配--localization)
+12. [协议 / License](#12-协议--license)
 
 ---
 
@@ -65,6 +66,8 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 | `references/publish-paths.md` | 发布方式决策表、Playwright 桥接操作步骤与风险说明 |
 | `scripts/build_publish_pack.py` | 生成发布包（操作清单 + 直接复制版），支持素材文件或直传参数 |
 | `scripts/pw-bridge.cjs` | Playwright + Edge 调试端口桥接服务，暴露 HTTP 接口 |
+| `scripts/setup.ps1` | 一键环境检查与依赖安装脚本 |
+| `package.json` | npm 依赖声明（`playwright-core`）与 `npm run setup` 快捷命令 |
 
 ## 4. 安装 / Installation
 
@@ -73,14 +76,61 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 - **方式一（推荐）**：使用 skill-installer 技能从本仓库安装；
 - **方式二**：将仓库内容手动放入 Codex 技能目录，如 `~/.codex/skills/xiaohongshu-publish`（Windows：`%USERPROFILE%\.codex\skills\xiaohongshu-publish`）；
 - 安装完成后重启 Codex 会话，即可在对话中按技能流程使用。
+- 建议运行 `scripts/setup.ps1` 完成环境检查与依赖安装（详见第 5 节）。
 
 **English**
 
 - **Option 1 (recommended)**: install via the skill-installer skill from this repository;
 - **Option 2**: copy the repository contents into a Codex skills directory, e.g. `~/.codex/skills/xiaohongshu-publish` (Windows: `%USERPROFILE%\.codex\skills\xiaohongshu-publish`);
 - Restart the Codex session after installation.
+- It is recommended to run `scripts/setup.ps1` afterwards to check the environment and install dependencies (see section 5).
 
-## 5. 使用方法 / Usage
+## 5. 环境要求与快速安装 / Requirements & Quick Setup
+
+**中文**
+
+运行本技能需要以下环境：
+
+| 组件 | 用途 | 说明 |
+|---|---|---|
+| Python 3 | `build_publish_pack.py` | 仅用标准库，无需 pip 安装任何包 |
+| Node.js | `pw-bridge.cjs` | 版本 ≥ 14 即可，需包含 npm |
+| Microsoft Edge | 浏览器自动化 | 通过调试端口驱动，无需下载 Chromium |
+| playwright-core | `pw-bridge.cjs` | 自动安装到仓库本地 `node_modules`，或自动探测 Codex 运行库 |
+
+一键检查与安装：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
+# 或：npm run setup
+```
+
+脚本会检查上述四项是否就绪；缺失时给出提示，并用 npm 把 `playwright-core` 安装到仓库本地
+`node_modules`（需要联网），最后做加载验证。参数：`-SkipInstall`（只检查不安装）、`-Force`（强制重装）。
+
+**English**
+
+Running this skill requires:
+
+| Component | Used by | Notes |
+|---|---|---|
+| Python 3 | `build_publish_pack.py` | stdlib only; no pip packages needed |
+| Node.js | `pw-bridge.cjs` | ≥ 14, with npm |
+| Microsoft Edge | browser automation | driven via debugging port; no Chromium download |
+| playwright-core | `pw-bridge.cjs` | auto-installed into repo-local `node_modules`, or auto-detected from the Codex runtime |
+
+One-command check & setup:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
+# or: npm run setup
+```
+
+The script verifies the four items above, warns about missing ones, installs `playwright-core` into the
+repo-local `node_modules` via npm (network required), and verifies it can be loaded. Options:
+`-SkipInstall` (check only), `-Force` (reinstall).
+
+## 6. 使用方法 / Usage
 
 **中文**
 
@@ -114,7 +164,7 @@ python scripts/build_publish_pack.py --title "标题" --body "正文" --tags "#�
 - `小红书发布内容_直接复制版_NN_主题.txt` — copy-ready bundle (includes a ChatGPT semi-auto instruction)
 - Console “pre-publish confirmation checklist” — validation warnings for title length, hashtag count, cover file, etc.
 
-## 6. 标准流程 / Standard Workflow
+## 7. 标准流程 / Standard Workflow
 
 **中文**
 
@@ -143,7 +193,7 @@ The workflow has four steps: (1) collect input — classify input type, parse th
 
 Two confirmation gates apply: gate 1 confirms the **parsed content** (correct extraction, no missing items); gate 2 confirms the **final publish state** (logged-in account, publish time, form contents). They cannot replace each other.
 
-## 7. 发布方式 / Publishing Paths
+## 8. 发布方式 / Publishing Paths
 
 **中文**
 
@@ -177,7 +227,7 @@ Notes:
 - High-frequency automation carries account-risk-control risk; keep frequency low and review before publishing;
 - Login requires the user to scan a QR code; the assistant cannot do it.
 
-## 8. 脚本说明 / Scripts Reference
+## 9. 脚本说明 / Scripts Reference
 
 ### `scripts/build_publish_pack.py`
 
@@ -193,17 +243,32 @@ Notes:
 | `--time` | 发布方式或时间描述，如 `立即发布`、`明天 10:10` |
 | `--num` / `--theme` | 篇序号 / 篇主题（默认从文件名提取） |
 
+### `scripts/setup.ps1`
+
+**中文**：一键检查 Python 3 / Node.js / Edge / `playwright-core`；缺失时提示，并自动把
+`playwright-core` 安装到仓库本地 `node_modules`（需要联网）。参数：`-SkipInstall`（只检查不安装）、
+`-Force`（强制重装）。
+
+**English**: one-command environment check & setup. It verifies Python 3 / Node.js / Edge /
+`playwright-core`, warns about missing items, and auto-installs `playwright-core` into the repo-local
+`node_modules` (network required). Options: `-SkipInstall` (check only), `-Force` (reinstall).
+
 ### `scripts/pw-bridge.cjs`
 
 **中文**：
 
 - 用途：Playwright + Edge 调试端口桥接服务，HTTP 接口 `GET /health`、`POST /exec`；
-- 依赖：本机 `node.exe` 与 `playwright-core`（脚本自动探测 Codex 运行库，或通过环境变量 `PW_PLAYWRIGHT_MODULES` 指定 node_modules 目录）；
+- 依赖：本机 `node.exe` 与 `playwright-core`（优先使用仓库本地 `node_modules`，其次自动探测 Codex 运行库，
+  也可通过环境变量 `PW_PLAYWRIGHT_MODULES` 指定目录）；
 - 详细操作见 `references/publish-paths.md` 方案三。
 
-**English**: `build_publish_pack.py` generates the publish pack from a material file or direct arguments (see the option table above). `pw-bridge.cjs` is a Playwright-to-Edge bridge service exposing `GET /health` and `POST /exec`; it auto-discovers `playwright-core` under the Codex runtime directory, or uses the `PW_PLAYWRIGHT_MODULES` environment variable. See `references/publish-paths.md`, path 3 for details.
+**English**: `build_publish_pack.py` generates the publish pack from a material file or direct arguments
+(see the option table above). `setup.ps1` performs a one-command environment check and dependency install.
+`pw-bridge.cjs` is a Playwright-to-Edge bridge service exposing `GET /health` and `POST /exec`; it prefers
+the repo-local `node_modules`, auto-discovers `playwright-core` under the Codex runtime directory, or uses
+the `PW_PLAYWRIGHT_MODULES` environment variable. See `references/publish-paths.md`, path 3 for details.
 
-## 9. 关键规则 / Key Rules
+## 10. 关键规则 / Key Rules
 
 **中文**
 
@@ -221,7 +286,7 @@ Notes:
 - Marketing words such as “free” or “comment 1” may trigger a platform marketing declaration that requires manual handling;
 - Official scheduled publishing is the most stable option with zero risk; a Monday/Wednesday/Friday cadence is suggested.
 
-## 10. 本地化适配 / Localization
+## 11. 本地化适配 / Localization
 
 **中文**：文档与示例使用占位符，按本机实际环境替换：
 
@@ -236,7 +301,7 @@ Notes:
 
 **English**: Paths in the docs use placeholders — `<工作区>` (workspace root), `<用户名>` (Windows username), `<版本>` (Codex runtime version), `<账号昵称>` (Xiaohongshu nickname). Replace them with your local values; alternatively point `pw-bridge.cjs` to your dependency directory via the `PW_PLAYWRIGHT_MODULES` environment variable.
 
-## 11. 协议 / License
+## 12. 协议 / License
 
 **中文**：本项目暂未指定开源协议，仅供个人学习与内部工作流参考；如需二次发布或商用，请先与作者确认。
 

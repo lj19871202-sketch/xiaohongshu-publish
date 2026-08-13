@@ -2,15 +2,22 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-// 自动定位 playwright-core：Codex 运行库目录随版本变化，无法写死；
-// 也可通过环境变量 PW_PLAYWRIGHT_MODULES 直接指定 node_modules 目录。
+// 自动定位 playwright-core，查找顺序：
+// 1) 环境变量 PW_PLAYWRIGHT_MODULES 指定的 node_modules 目录；
+// 2) 仓库本地 node_modules（由 scripts/setup.ps1 安装）；
+// 3) Codex 运行库目录（LOCALAPPDATA\OpenAI\Codex\runtimes\cua_node\<版本>\bin\node_modules）。
 function findPlaywrightCoreModules() {
-  const candidates = [];
-  if (process.env.PW_PLAYWRIGHT_MODULES) candidates.push(process.env.PW_PLAYWRIGHT_MODULES);
+  const directCandidates = [];
+  const scanRoots = [];
+  if (process.env.PW_PLAYWRIGHT_MODULES) directCandidates.push(process.env.PW_PLAYWRIGHT_MODULES);
+  directCandidates.push(path.join(__dirname, '..', 'node_modules'));
   if (process.env.LOCALAPPDATA) {
-    candidates.push(path.join(process.env.LOCALAPPDATA, 'OpenAI', 'Codex', 'runtimes', 'cua_node'));
+    scanRoots.push(path.join(process.env.LOCALAPPDATA, 'OpenAI', 'Codex', 'runtimes', 'cua_node'));
   }
-  for (const root of candidates) {
+  for (const dir of directCandidates) {
+    if (fs.existsSync(path.join(dir, 'playwright-core'))) return dir;
+  }
+  for (const root of scanRoots) {
     let dirs = [];
     try { dirs = fs.readdirSync(root); } catch (e) { continue; }
     for (const dir of dirs) {
@@ -18,7 +25,7 @@ function findPlaywrightCoreModules() {
       if (fs.existsSync(path.join(modules, 'playwright-core'))) return modules;
     }
   }
-  throw new Error('未找到 playwright-core，请设置环境变量 PW_PLAYWRIGHT_MODULES 指向包含 playwright-core 的 node_modules 目录');
+  throw new Error('未找到 playwright-core。请运行 scripts/setup.ps1 自动安装，或设置环境变量 PW_PLAYWRIGHT_MODULES 指向包含 playwright-core 的 node_modules 目录');
 }
 
 const { chromium } = require(path.join(findPlaywrightCoreModules(), 'playwright-core'));

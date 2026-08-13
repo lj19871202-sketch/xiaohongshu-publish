@@ -1,0 +1,12 @@
+{
+  "name": "xiaohongshu-publish",
+  "version": "1.0.0",
+  "description": "小红书笔记发布技能（Codex Skill）— Xiaohongshu (RED) note publishing workflow skill",
+  "private": true,
+  "scripts": {
+    "setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1"
+  },
+  "dependencies": {
+    "playwright-core": "^1.45.0"
+  }
+}
