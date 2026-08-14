@@ -2,8 +2,8 @@
 
 > 小红书笔记发布技能（Codex Skill）· Xiaohongshu (RED) Note Publishing Skill
 >
-> 收集并校验标题 / 正文 / 话题标签 / 封面，生成发布包，并引导完成发布。
-> Collect and validate title / body / hashtags / cover, generate a publish pack, and guide the publishing workflow.
+> 从主题趋势研究、内容预审到发布执行，完成小红书笔记的生产与发布。
+> Research current topic trends, preflight the content, and guide Xiaohongshu note publishing from draft to verification.
 
 ## 目录 / Table of Contents
 
@@ -26,13 +26,13 @@
 
 **中文**
 
-`xiaohongshu-publish` 是一个面向 Codex 的**参考流程技能**，帮助完成小红书图文笔记的发布准备与发布引导。所有内容由用户提供、不固定，技能负责：解析五要素（标题、备选标题、正文、话题标签、封面图）→ 补齐缺失项 → 校验 → 生成「发布操作清单 + 直接复制版」发布包 → 按选定路径完成发布（手动 / 半自动 / 浏览器自动化）。
+`xiaohongshu-publish` 是一个面向 Codex 的**参考流程技能**，帮助完成小红书图文笔记从选题到发布的完整链路。用户可以直接提供主题，也可以提供完整文案或素材文件。仅提供主题时，技能默认先研究近30天同类公开内容，再提炼概要、生成文案、完成预审，并解析五要素（标题、备选标题、正文、话题标签、封面图）→ 补齐缺失项 → 生成「发布操作清单 + 直接复制版」发布包 → 按选定路径完成发布（手动 / 半自动 / 浏览器自动化）。
 
 核心原则：**缺什么补什么，补完才生成发布包**；任何内容未经用户确认不得发布。
 
 **English**
 
-`xiaohongshu-publish` is a **reference-workflow skill** for Codex that prepares and guides Xiaohongshu (RED) image-text note publishing. All content is user-provided and varies per task. The skill parses the five elements (title, alt title, body, hashtags, cover image), fills in missing items, validates them, generates a publish pack (operation checklist + copy-ready version), and guides publishing through manual, semi-automated, or browser-automated paths.
+`xiaohongshu-publish` is a **reference-workflow skill** for Codex that covers Xiaohongshu (RED) note production from topic research through publishing. The user may provide a topic, complete copy, or a material file. When only a topic is provided, the skill researches comparable public posts from the last 30 days, extracts a current brief, generates and preflights the content, parses the five elements (title, alt title, body, hashtags, cover image), fills gaps, generates a publish pack, and guides publishing through manual, semi-automated, or browser-automated paths.
 
 Core principle: **fill in whatever is missing, and only generate the publish pack when everything is complete**; nothing is published without explicit user confirmation.
 
@@ -40,9 +40,11 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 
 **中文**
 
+- **近30天趋势研究**：按主题检索公开样本，筛选可核验的点赞 Top20，分析标题、封面、正文结构和风险；样本不足时如实说明
+- **内容生产与预审**：从趋势样本提炼当前时点概要，再生成标题、正文、话题和配图建议，并输出 `可发 / 需修改 / 暂不建议发`
 - **五要素收集、补齐与校验**：标题（≤20 字）、备选标题、正文（保留换行与 emoji，不自行改写）、话题标签（通常 5-7 个）、封面图（至少 1 张）
 - **生成发布包**：「发布操作清单」（Markdown）+「直接复制版」（txt，含 ChatGPT 半自动指令）
-- **三种发布方式**：官方定时发布 / 半自动（AI 填表、用户点发布）/ Playwright + Edge 调试端口自动化
+- **三种发布方式**：手动、半自动、浏览器自动化；默认先使用半自动填充，明确确认后才提交
 - **覆盖常见坑点**：标题超限截断、正文换行注入失效、话题残留字符、营销声明弹窗、按钮隐藏等
 - **双重确认门禁**：解析结果确认（门禁①）+ 发布前最终确认（门禁②），两步不可互相替代
 
@@ -50,7 +52,7 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 
 - **Collect, complete, and validate the five elements**: title (≤20 chars), alt title, body (preserves line breaks & emoji, never rewritten), hashtags (typically 5-7), cover image (at least 1)
 - **Generate a publish pack**: an operation checklist (Markdown) and a copy-ready bundle (txt, including a ChatGPT semi-auto instruction)
-- **Three publishing paths**: official scheduled publish / semi-automated (AI fills the form, user clicks publish) / Playwright + Edge debugging-port automation
+- **Three publishing paths**: manual, semi-automated, and browser automation; the default is to fill the form and stop until explicit confirmation
 - **Covers known pitfalls**: title overflow/truncation, newline injection failures, leftover `#` characters, marketing-declaration popups, hidden buttons, etc.
 - **Double confirmation gates**: parsed-content confirmation (gate 1) + final pre-publish confirmation (gate 2); they cannot replace each other
 
@@ -62,6 +64,7 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 | `README.md` | 本文件：技能说明与使用文档（中英双语） |
 | `agents/openai.yaml` | 技能元数据（OpenAI agents 格式） |
 | `references/content-production.md` | 内容生产参考：竞品调研、系列文案撰写、素材拆分、配图库规范 |
+| `references/trend-research.md` | 近30天同类内容检索、Top20筛选、证据记录和样本不足时的降级规则 |
 | `references/platform-notes.md` | 创作者平台表单填写细节与实测坑点 |
 | `references/publish-paths.md` | 发布方式决策表、Playwright 桥接操作步骤与风险说明 |
 | `scripts/build_publish_pack.py` | 生成发布包（操作清单 + 直接复制版），支持素材文件或直传参数 |
@@ -134,7 +137,7 @@ repo-local `node_modules` via npm (network required), and verifies it can be loa
 
 **中文**
 
-**对话式使用**：直接给出标题、正文、话题标签、封面路径，或提供素材文件路径（推荐格式见 `SKILL.md` 的「输入约定」），技能会解析五要素、补齐缺失项并生成发布包。
+**对话式使用**：可以只给主题，也可以直接给出标题、正文、话题标签、封面路径或素材文件路径。只给主题时默认先做近30天同类内容研究，再生成、预审并补齐发布字段；完整内容或素材文件则直接解析并进入预审和发布准备。
 
 **脚本直用**：
 
@@ -170,10 +173,16 @@ python scripts/build_publish_pack.py --title "标题" --body "正文" --tags "#�
 
 | 步骤 | 内容 | 输出 / 门禁 |
 |---|---|---|
-| 1. 收集输入 | 判断输入类型 → 解析五要素 → 补齐缺失 → 校验 | 解析结果经用户确认（门禁①） |
-| 2. 生成发布包 | 运行 `scripts/build_publish_pack.py` | 操作清单 + 直接复制版 |
-| 3. 选择发布方式 | 按 `references/publish-paths.md` 决策表选择 | 手动 / 半自动 / 自动化 |
-| 4. 平台填写与确认 | 按 `references/platform-notes.md` 填表 | 发布前最终确认（门禁②），发布按钮由用户点击 |
+| 1. 收集输入 | 判断主题、完整内容或素材文件类型 | 明确目标读者、事实依据和视觉字段 |
+| 2. 趋势研究 | 仅给主题时研究近30天同类公开样本 | 可核验点赞 Top20，或说明样本不足 |
+| 3. 提炼概要 | 区分事实、观察和假设，提炼当前内容角度 | 目标读者、痛点、标题触发器、结构和互动动作 |
+| 4. 生成初稿 | 生成标题、正文、话题、配图建议和视觉 brief | 初稿与待补材料清单 |
+| 5. 内容预审 | 检查证据、授权、标题承诺和风险 | `可发 / 需修改 / 暂不建议发` |
+| 6. 解析门禁 | 补齐字段并确认解析结果 | 门禁①通过后生成发布包 |
+| 7. 生成发布包 | 运行 `scripts/build_publish_pack.py` | 操作清单 + 直接复制版 |
+| 8. 选择发布方式 | 按 `references/publish-paths.md` 选择路径 | 手动 / 半自动 / 浏览器自动化 |
+| 9. 登录与平台填写 | 检查登录并填写封面、标题、正文、话题和时间 | 默认停在可发布页面 |
+| 10. 最终确认与核验 | 用户明确确认后提交；自动化路径检查发布结果 | 门禁②通过，记录成功提示、作品列表或链接 |
 
 **五要素校验规则**：
 
@@ -189,9 +198,9 @@ python scripts/build_publish_pack.py --title "标题" --body "正文" --tags "#�
 
 **English**
 
-The workflow has four steps: (1) collect input — classify input type, parse the five elements, fill gaps, validate; (2) generate the publish pack with `scripts/build_publish_pack.py`; (3) choose a publishing path per the decision table in `references/publish-paths.md`; (4) fill the platform form per `references/platform-notes.md` and confirm before publishing.
+The workflow is: (1) collect the topic, complete content, or material file; (2) when only a topic is provided, research comparable public posts from the last 30 days; (3) extract a current content brief; (4) generate a draft; (5) run content preflight; (6) pass the parsed-content gate; (7) generate the publish pack; (8) choose manual, semi-automated, or browser-automated publishing; (9) check login and fill the platform form; and (10) after explicit confirmation, publish and verify the result.
 
-Two confirmation gates apply: gate 1 confirms the **parsed content** (correct extraction, no missing items); gate 2 confirms the **final publish state** (logged-in account, publish time, form contents). They cannot replace each other.
+Two confirmation gates apply: gate 1 confirms the **parsed content** (correct extraction, no missing items); gate 2 confirms the **final publish state** (logged-in account, publish time, form contents). By default, the assistant stops after filling the form. In browser-automated mode, it may click publish only after the user explicitly confirms, then it must verify a success notice, redirect, works list, or visible link. The gates cannot replace each other.
 
 ## 8. 发布方式 / Publishing Paths
 
@@ -200,8 +209,8 @@ Two confirmation gates apply: gate 1 confirms the **parsed content** (correct ex
 | 场景 | 推荐路径 |
 |---|---|
 | 追求稳定、零风控 | 官方「定时发布」+ 操作清单（人工设置，约 20-30 分钟） |
-| 有 ChatGPT 或浏览器控制可用 | 半自动：AI 打开页面并填表，用户点发布 |
-| 会话具备 Computer Use / 浏览器工具 | 浏览器自动化（发布前仍人工确认） |
+| 默认路径 | 半自动：AI 打开页面并填表，默认停在发布页面 |
+| 用户明确要求自动发布且有浏览器控制 | 浏览器自动化：确认后由助手点击并核验结果 |
 | 会话无任何浏览器工具（如 js_repl=false） | Playwright + Edge 调试端口桥接（方案三，本技能已验证） |
 
 注意事项：
@@ -209,15 +218,15 @@ Two confirmation gates apply: gate 1 confirms the **parsed content** (correct ex
 - 小红书无公开发布 API，任何方式都无法绕过登录直接发布；
 - 默认先停在填写完成页面；用户明确确认后，半自动由用户点击发布，自动化模式可由助手点击发布并核验结果；
 - 高频自动操作有账号风控风险，建议低频率 + 发布前人工核对；
-- 未登录时需用户扫码，助手无法代劳。
+- 未登录时需用户扫码，助手无法代劳；当前浏览器出现登录页时，默认每10—30秒检查一次，最多等待120秒，超时后才切换到可用的 Edge 会话。
 
 **English**
 
 | Scenario | Recommended path |
 |---|---|
 | Maximum stability, zero risk | Official scheduled publish + operation checklist (manual, ~20-30 min) |
-| ChatGPT or browser control available | Semi-automated: AI opens the page and fills the form, user clicks publish |
-| Computer Use / browser tools available | Browser automation (still confirm before publishing) |
+| Default path | Semi-automated: AI opens the page and fills the form, then stops before publishing |
+| Explicit auto-publish request with browser control | Browser automation: after confirmation, the assistant clicks publish and verifies the result |
 | No browser tools in session (e.g. js_repl=false) | Playwright + Edge debugging-port bridge (path 3, verified) |
 
 Notes:
@@ -225,7 +234,7 @@ Notes:
 - Xiaohongshu has no public publishing API; no method can bypass login;
 - By default, stop after filling the form; after explicit user confirmation, semi-automated mode leaves the button to the user, while browser automation may click it and verify the result;
 - High-frequency automation carries account-risk-control risk; keep frequency low and review before publishing;
-- Login requires the user to scan a QR code; the assistant cannot do it.
+- Login requires the user to scan a QR code; the assistant cannot do it. On the current browser, wait 10-30 seconds between checks for up to 120 seconds before switching to an available Edge session.
 
 ## 9. 脚本说明 / Scripts Reference
 
