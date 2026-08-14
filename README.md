@@ -41,7 +41,6 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 **中文**
 
 - **五要素收集、补齐与校验**：标题（≤20 字）、备选标题、正文（保留换行与 emoji，不自行改写）、话题标签（通常 5-7 个）、封面图（至少 1 张）
-- **发布前内容预审**：检查目标、单一核心机制、真人材料、证据/授权、标题—封面—正文一致性与风险候选；输出可发 / 需修改 / 暂不建议发
 - **生成发布包**：「发布操作清单」（Markdown）+「直接复制版」（txt，含 ChatGPT 半自动指令）
 - **三种发布方式**：官方定时发布 / 半自动（AI 填表、用户点发布）/ Playwright + Edge 调试端口自动化
 - **覆盖常见坑点**：标题超限截断、正文换行注入失效、话题残留字符、营销声明弹窗、按钮隐藏等
@@ -63,7 +62,6 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 | `README.md` | 本文件：技能说明与使用文档（中英双语） |
 | `agents/openai.yaml` | 技能元数据（OpenAI agents 格式） |
 | `references/content-production.md` | 内容生产参考：竞品调研、系列文案撰写、素材拆分、配图库规范 |
-| `references/content-preflight.md` | 发布前内容预审、保意修复、批量管线与视觉交接字段 |
 | `references/platform-notes.md` | 创作者平台表单填写细节与实测坑点 |
 | `references/publish-paths.md` | 发布方式决策表、Playwright 桥接操作步骤与风险说明 |
 | `scripts/build_publish_pack.py` | 生成发布包（操作清单 + 直接复制版），支持素材文件或直传参数 |
@@ -209,7 +207,7 @@ Two confirmation gates apply: gate 1 confirms the **parsed content** (correct ex
 注意事项：
 
 - 小红书无公开发布 API，任何方式都无法绕过登录直接发布；
-- 半自动/自动化模式下，**发布按钮始终留给用户点击**；
+- 默认先停在填写完成页面；用户明确确认后，半自动由用户点击发布，自动化模式可由助手点击发布并核验结果；
 - 高频自动操作有账号风控风险，建议低频率 + 发布前人工核对；
 - 未登录时需用户扫码，助手无法代劳。
 
@@ -225,7 +223,7 @@ Two confirmation gates apply: gate 1 confirms the **parsed content** (correct ex
 Notes:
 
 - Xiaohongshu has no public publishing API; no method can bypass login;
-- In semi-automated/automated modes, the **publish button is always left to the user**;
+- By default, stop after filling the form; after explicit user confirmation, semi-automated mode leaves the button to the user, while browser automation may click it and verify the result;
 - High-frequency automation carries account-risk-control risk; keep frequency low and review before publishing;
 - Login requires the user to scan a QR code; the assistant cannot do it.
 
@@ -275,7 +273,7 @@ the `PW_PLAYWRIGHT_MODULES` environment variable. See `references/publish-paths.
 **中文**
 
 - 标题不超过 20 字；超限先与用户确认，或换用备选标题；
-- 发布前必须向用户确认完整内容与定时时间；半自动模式下发布按钮留给用户；
+- 发布前必须向用户确认完整内容与定时时间；默认停在填写完成页面，自动化发布只有在用户明确确认后才提交并核验；
 - 会话没有浏览器控制工具时，**不擅自修改全局配置**（如 `js_repl` / Computer Use 开关），优先使用方案三桥接；
 - 正文含「免费」「扣 1」等营销词时，可能触发平台营销声明，需用户手动处理；
 - 官方「定时发布」最稳定、零风控；发布节奏建议每周一 / 三 / 五。
@@ -283,7 +281,7 @@ the `PW_PLAYWRIGHT_MODULES` environment variable. See `references/publish-paths.
 **English**
 
 - Titles must be ≤20 characters; if over, confirm with the user or switch to the alt title;
-- Always confirm the full content and schedule with the user before publishing; in semi-auto mode the publish button stays with the user;
+- Always confirm the full content and schedule with the user before publishing; stop after filling by default, and let browser automation submit only after explicit confirmation and result verification;
 - When no browser-control tool is available in the session, do **not** modify global configuration (e.g. `js_repl` / Computer Use toggles); prefer the path-3 bridge;
 - Marketing words such as “free” or “comment 1” may trigger a platform marketing declaration that requires manual handling;
 - Official scheduled publishing is the most stable option with zero risk; a Monday/Wednesday/Friday cadence is suggested.
