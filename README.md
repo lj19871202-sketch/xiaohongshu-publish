@@ -41,6 +41,7 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 **中文**
 
 - **五要素收集、补齐与校验**：标题（≤20 字）、备选标题、正文（保留换行与 emoji，不自行改写）、话题标签（通常 5-7 个）、封面图（至少 1 张）
+- **发布前内容预审**：检查目标、单一核心机制、真人材料、证据/授权、标题—封面—正文一致性与风险候选；输出可发 / 需修改 / 暂不建议发
 - **生成发布包**：「发布操作清单」（Markdown）+「直接复制版」（txt，含 ChatGPT 半自动指令）
 - **三种发布方式**：官方定时发布 / 半自动（AI 填表、用户点发布）/ Playwright + Edge 调试端口自动化
 - **覆盖常见坑点**：标题超限截断、正文换行注入失效、话题残留字符、营销声明弹窗、按钮隐藏等
@@ -62,6 +63,7 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 | `README.md` | 本文件：技能说明与使用文档（中英双语） |
 | `agents/openai.yaml` | 技能元数据（OpenAI agents 格式） |
 | `references/content-production.md` | 内容生产参考：竞品调研、系列文案撰写、素材拆分、配图库规范 |
+| `references/content-preflight.md` | 发布前内容预审、保意修复、批量管线与视觉交接字段 |
 | `references/platform-notes.md` | 创作者平台表单填写细节与实测坑点 |
 | `references/publish-paths.md` | 发布方式决策表、Playwright 桥接操作步骤与风险说明 |
 | `scripts/build_publish_pack.py` | 生成发布包（操作清单 + 直接复制版），支持素材文件或直传参数 |
