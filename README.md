@@ -202,7 +202,7 @@ Default folder layout: `<工作区>\小红书发布素材\<图片|视频|文字>
 
 **English**
 
-The workflow is: (1) collect the topic, complete content, or material file; (2) when only a topic is provided, research comparable public posts from the last 30 days; (3) extract a current content brief; (4) generate a draft; (5) run content preflight; (6) pass the parsed-content gate; (7) generate the publish pack; (8) choose manual, semi-automated, or browser-automated publishing; (9) check login and fill the platform form; and (10) after explicit confirmation, publish and verify the result.
+The workflow is: (1) collect the topic, complete content, or material file; (2) when only a topic is provided, research comparable public posts from the last 30 days; (3) extract a current content brief; (4) generate a draft; (5) run content preflight; (6) pass the parsed-content gate; (7) generate the publish pack; (8) ask the user to choose the publish path (manual / semi-automated / automated) and publish time (immediate / scheduled); (9) check login and fill the platform form; and (10) after explicit confirmation, publish and verify the result.
 
 Two confirmation gates apply: gate 1 confirms the **parsed content** (correct extraction, no missing items); gate 2 confirms the **final publish state** (logged-in account, publish time, form contents). By default, the assistant stops after filling the form. In browser-automated mode, it may click publish only after the user explicitly confirms, then it must verify a success notice, redirect, works list, or visible link. The gates cannot replace each other.
 
@@ -220,6 +220,7 @@ Two confirmation gates apply: gate 1 confirms the **parsed content** (correct ex
 注意事项：
 
 - 小红书无公开发布 API，任何方式都无法绕过登录直接发布；
+- 内容生成后必须先由用户选择发布方式和发布时间（手动 / 半自动 / 自动；立即 / 定时），未选择不得进入发布环节；
 - 默认先停在填写完成页面；用户明确确认后，半自动由用户点击发布，自动化模式可由助手点击发布并核验结果；
 - 高频自动操作有账号风控风险，建议低频率 + 发布前人工核对；
 - 未登录时需用户扫码，助手无法代劳；当前浏览器出现登录页时，默认每10—30秒检查一次，最多等待120秒，超时后才切换到可用的 Edge 会话。
@@ -236,6 +237,7 @@ Two confirmation gates apply: gate 1 confirms the **parsed content** (correct ex
 Notes:
 
 - Xiaohongshu has no public publishing API; no method can bypass login;
+- After content generation, the user must first choose the publishing method (manual / semi-automated / automated) and publish time (immediate / scheduled) before entering the publishing stage;
 - By default, stop after filling the form; after explicit user confirmation, semi-automated mode leaves the button to the user, while browser automation may click it and verify the result;
 - High-frequency automation carries account-risk-control risk; keep frequency low and review before publishing;
 - Login requires the user to scan a QR code; the assistant cannot do it. On the current browser, wait 10-30 seconds between checks for up to 120 seconds before switching to an available Edge session.
@@ -294,7 +296,7 @@ the `PW_PLAYWRIGHT_MODULES` environment variable. See `references/publish-paths.
 **English**
 
 - Titles must be ≤20 characters; if over, confirm with the user or switch to the alt title;
-- Always confirm the full content and schedule with the user before publishing; stop after filling by default, and let browser automation submit only after explicit confirmation and result verification;
+- After content generation, require the user to choose the publishing method (manual / semi-automated / automated) and publish time (immediate / scheduled); always confirm the full content and schedule before publishing, stop after filling by default, and let browser automation submit only after explicit confirmation and result verification;
 - When no browser-control tool is available in the session, do **not** modify global configuration (e.g. `js_repl` / Computer Use toggles); prefer the path-3 bridge;
 - Marketing words such as “free” or “comment 1” may trigger a platform marketing declaration that requires manual handling;
 - Official scheduled publishing is the most stable option with zero risk; a Monday/Wednesday/Friday cadence is suggested.
