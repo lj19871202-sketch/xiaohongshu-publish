@@ -223,7 +223,7 @@ Two confirmation gates apply: gate 1 confirms the **parsed content** (correct ex
 - 内容生成后必须先由用户选择发布方式和发布时间（手动 / 半自动 / 自动；立即 / 定时），未选择不得进入发布环节；
 - 默认先停在填写完成页面；用户明确确认后，半自动由用户点击发布，自动化模式可由助手点击发布并核验结果；
 - 高频自动操作有账号风控风险，建议低频率 + 发布前人工核对；
-- 未登录时需用户扫码，助手无法代劳；当前浏览器出现登录页时，默认每10—30秒检查一次，最多等待120秒，超时后才切换到可用的 Edge 会话。
+- 未登录时需用户扫码，助手无法代劳；默认优先使用内置浏览器，内置浏览器不可用时才切换外置浏览器（Edge / Chrome）；当前浏览器出现登录页时，每 10—30 秒检查一次、最多等待 120 秒，超时且用户未指定浏览器时才切换。
 
 **English**
 
@@ -240,7 +240,7 @@ Notes:
 - After content generation, the user must first choose the publishing method (manual / semi-automated / automated) and publish time (immediate / scheduled) before entering the publishing stage;
 - By default, stop after filling the form; after explicit user confirmation, semi-automated mode leaves the button to the user, while browser automation may click it and verify the result;
 - High-frequency automation carries account-risk-control risk; keep frequency low and review before publishing;
-- Login requires the user to scan a QR code; the assistant cannot do it. On the current browser, wait 10-30 seconds between checks for up to 120 seconds before switching to an available Edge session.
+- Login requires the user to scan a QR code; the assistant cannot do it. Prefer the built-in browser by default; only switch to an external browser (Edge / Chrome) when the built-in one is unavailable. On the current browser, wait 10-30 seconds between checks for up to 120 seconds before switching.
 
 ## 9. 脚本说明 / Scripts Reference
 
