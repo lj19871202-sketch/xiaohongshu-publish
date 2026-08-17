@@ -143,7 +143,7 @@ repo-local `node_modules` via npm (network required), and verifies it can be loa
 
 ```powershell
 # 素材文件方式
-python scripts/build_publish_pack.py --source "素材.txt" --time "明天 10:10"
+python scripts/build_publish_pack.py --source "<工作区>\小红书发布素材\文字\01_工位免费3个月\01_工位免费3个月.txt" --time "明天 10:10"
 
 # 直传参数方式
 python scripts/build_publish_pack.py --title "标题" --body "正文" --tags "#话题1 #话题2" --cover "封面.jpg" --theme "主题" --num "02" --time "立即发布"
@@ -151,9 +151,11 @@ python scripts/build_publish_pack.py --title "标题" --body "正文" --tags "#�
 
 **输出产物**：
 
-- `小红书发布操作清单_NN_主题.md`：手动发布操作清单
+- `小红书发布操作清单_NN_主题.md`：手动发布操作清单（默认输出到素材所在主题文件夹）
 - `小红书发布内容_直接复制版_NN_主题.txt`：直接复制版（含 ChatGPT 半自动指令）
 - 控制台「发布前待确认清单」：标题字数、话题数量、封面文件等校验警告
+
+默认目录约定：`<工作区>\小红书发布素材\<图片|视频|文字>\<主题>\`，生成内容按类型与主题归档。
 
 **English**
 
@@ -163,9 +165,11 @@ python scripts/build_publish_pack.py --title "标题" --body "正文" --tags "#�
 
 **Outputs**:
 
-- `小红书发布操作清单_NN_主题.md` — manual operation checklist
+- `小红书发布操作清单_NN_主题.md` — manual operation checklist (defaults to the source theme folder)
 - `小红书发布内容_直接复制版_NN_主题.txt` — copy-ready bundle (includes a ChatGPT semi-auto instruction)
 - Console “pre-publish confirmation checklist” — validation warnings for title length, hashtag count, cover file, etc.
+
+Default folder layout: `<工作区>\小红书发布素材\<图片|视频|文字>\<主题>\`; generated content is archived by type and theme.
 
 ## 7. 标准流程 / Standard Workflow
 
@@ -248,7 +252,7 @@ Notes:
 | `--title` / `--body` | 直传标题 / 正文（无 `--source` 时必填） |
 | `--tags` | 话题标签，如 `#话题1 #话题2` |
 | `--cover` | 封面图路径 |
-| `--outdir` | 输出目录（默认：素材上级目录 / 当前目录） |
+| `--outdir` | 输出目录（默认：素材所在主题文件夹；直传时当前目录） |
 | `--time` | 发布方式或时间描述，如 `立即发布`、`明天 10:10` |
 | `--num` / `--theme` | 篇序号 / 篇主题（默认从文件名提取） |
 

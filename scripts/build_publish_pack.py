@@ -3,7 +3,7 @@
 """生成小红书发布包：发布操作清单 + 直接复制版（含 ChatGPT 半自动指令）。
 
 内容由用户提供，支持两种输入方式（可混用，直传参数优先）：
-1. 素材文件：--source "<工作区>\\小红书发布素材\\01_工位免费3个月\\01_工位免费3个月.txt"
+1. 素材文件：--source "<工作区>\\小红书发布素材\\文字\\01_工位免费3个月\\01_工位免费3个月.txt"
 2. 直接传参：--title/--body/--tags/--cover/--theme/--num
 
 用法示例:
@@ -228,7 +228,7 @@ def main() -> None:
     parser.add_argument("--body", default=None, help="正文（直传时必填）")
     parser.add_argument("--tags", default=None, help="话题标签，如：#话题1 #话题2")
     parser.add_argument("--cover", default=None, help="封面图路径")
-    parser.add_argument("--outdir", default=None, help="输出目录，默认素材文件所在目录的上一级；直传时默认当前目录")
+    parser.add_argument("--outdir", default=None, help="输出目录，默认素材文件所在目录（新目录约定下即 文字\\<主题>）；直传时默认当前目录")
     parser.add_argument("--time", default="立即发布", help="定时时间描述，如：立即发布 / 明天 10:10")
     parser.add_argument("--num", default=None, help="篇序号，默认从文件名提取")
     parser.add_argument("--theme", default=None, help="篇主题，默认取文件名下划线后部分")
@@ -268,7 +268,7 @@ def main() -> None:
         m["alt_cover_note"] = ""
         m["source"] = ""
 
-    outdir = Path(args.outdir) if args.outdir else (src.parents[1] if src else Path.cwd())
+    outdir = Path(args.outdir) if args.outdir else (src.parent if src else Path.cwd())
     outdir.mkdir(parents=True, exist_ok=True)
     suffix = f"{m['num']}_{m['theme']}" if m["num"] else m["theme"]
     checklist = outdir / f"小红书发布操作清单_{suffix}.md"
