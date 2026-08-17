@@ -79,14 +79,14 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 - **方式一（推荐）**：使用 skill-installer 技能从本仓库安装；
 - **方式二**：将仓库内容手动放入 Codex 技能目录，如 `~/.codex/skills/xiaohongshu-publish`（Windows：`%USERPROFILE%\.codex\skills\xiaohongshu-publish`）；
 - 安装完成后重启 Codex 会话，即可在对话中按技能流程使用。
-- 建议运行 `scripts/setup.ps1` 完成环境检查与依赖安装（详见第 5 节）。
+- **默认流程**：安装完成后运行 `scripts/setup.ps1` 完成环境检查并安装 `playwright-core`（需要联网，详见第 5 节）。
 
 **English**
 
 - **Option 1 (recommended)**: install via the skill-installer skill from this repository;
 - **Option 2**: copy the repository contents into a Codex skills directory, e.g. `~/.codex/skills/xiaohongshu-publish` (Windows: `%USERPROFILE%\.codex\skills\xiaohongshu-publish`);
 - Restart the Codex session after installation.
-- It is recommended to run `scripts/setup.ps1` afterwards to check the environment and install dependencies (see section 5).
+- **Default flow**: after installation, run `scripts/setup.ps1` to check the environment and install `playwright-core` (network required; see section 5).
 
 ## 5. 环境要求与快速安装 / Requirements & Quick Setup
 
@@ -101,7 +101,7 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 | Microsoft Edge | 浏览器自动化 | 通过调试端口驱动，无需下载 Chromium |
 | playwright-core | `pw-bridge.cjs` | 自动安装到仓库本地 `node_modules`，或自动探测 Codex 运行库 |
 
-一键检查与安装：
+安装默认流程（环境检查 + 安装 `playwright-core`，需要联网）：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
@@ -122,7 +122,7 @@ Running this skill requires:
 | Microsoft Edge | browser automation | driven via debugging port; no Chromium download |
 | playwright-core | `pw-bridge.cjs` | auto-installed into repo-local `node_modules`, or auto-detected from the Codex runtime |
 
-One-command check & setup:
+Default installation flow (environment check + `playwright-core` install, network required):
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
@@ -254,11 +254,11 @@ Notes:
 
 ### `scripts/setup.ps1`
 
-**中文**：一键检查 Python 3 / Node.js / Edge / `playwright-core`；缺失时提示，并自动把
+**中文**：安装/首次使用时的默认流程——一键检查 Python 3 / Node.js / Edge / `playwright-core`；缺失时提示，并自动把
 `playwright-core` 安装到仓库本地 `node_modules`（需要联网）。参数：`-SkipInstall`（只检查不安装）、
 `-Force`（强制重装）。
 
-**English**: one-command environment check & setup. It verifies Python 3 / Node.js / Edge /
+**English**: default flow at install/first use — one-command environment check & setup. It verifies Python 3 / Node.js / Edge /
 `playwright-core`, warns about missing items, and auto-installs `playwright-core` into the repo-local
 `node_modules` (network required). Options: `-SkipInstall` (check only), `-Force` (reinstall).
 
