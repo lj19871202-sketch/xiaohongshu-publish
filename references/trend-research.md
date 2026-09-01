@@ -7,8 +7,9 @@
 ### 1.0 站内检索硬性门禁
 
 - 触发条件：任务出现“趋势研究、同类内容、爆文、Top20、当前热门”等调研要求，或用户只给主题/需求并要求生成内容。
-- 第一动作：必须使用内置浏览器打开小红书站内搜索页、公开笔记页或用户提供的小红书链接，并先记录 `browser_route: in_app`、`site_search_status: started`、实际 URL、登录状态和页面是否可读。不得直接选择外置浏览器或桥接。
+- 第一动作：必须使用内置浏览器打开小红书站内搜索页、公开笔记页或用户提供的小红书链接，并先记录 `browser_route: in_app`、`site_search_status: started`。这只表示开始尝试，不表示访问成功；不得直接选择外置浏览器或桥接。
 - 门禁未通过前，禁止生成文案、输出趋势结论、调用通用互联网搜索，或把搜索引擎结果当作小红书站内样本。内置浏览器明确技术失败后，才可按外置 Edge/Chrome、Playwright + Edge 桥接的顺序逐级尝试；每次跳转必须记录失败原因。
+- **访问成功证据**：进入样本采集前，必须向用户展示 `browser_evidence_status: confirmed`，并同时给出实际 `page_url`、`page_title`、`page_identity: xiaohongshu`、`search_query`、`search_state`（`results` / `no_results` / `blocked`）以及页面实际可见的前 3 条结果摘要（标题、可见点赞、发布时间、链接；不足 3 条如实列出）。仅打开首页、空白页、登录页或搜索框，不得标记为 `confirmed`，也不得声称已搜索到样本。能截图时一并展示截图或截图路径；不能截图时展示可读页面文本或 DOM 证据。
 - 只有站内访问失败并且用户明确回复“确认使用公开网页调研”后，才允许走降级路径；完整内容且用户没有要求趋势研究时，才可以不做趋势研究。
 
 
@@ -78,6 +79,16 @@
 ```text
 研究窗口：YYYY-MM-DD 至 YYYY-MM-DD（Asia/Shanghai）
 调研路径：xhs_site / public_web_fallback_authorized / unavailable
+站内访问证据：
+browser_evidence_status: confirmed / unavailable
+browser_route: in_app / external / bridge
+page_url: 实际 URL
+page_title: 页面标题
+page_identity: xiaohongshu / unknown
+search_query: 实际搜索词
+search_state: results / no_results / blocked
+visible_results: 前 3 条可见结果摘要（标题、点赞、发布时间、链接）
+证据展示：截图路径或可读页面文本 / DOM
 站内访问：实际打开 URL / 登录等待 / 失败原因
 视觉读取：已查看的封面/轮播图/视频关键帧范围；未读原因
 主题与同类定义：
