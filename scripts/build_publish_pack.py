@@ -17,6 +17,9 @@ import sys
 from pathlib import Path
 
 
+MAX_BODY_CHARS = 1000
+
+
 def read_source(path: Path) -> str:
     return path.read_text(encoding="utf-8-sig")
 
@@ -68,6 +71,11 @@ def validate_tags(tags: str) -> list:
 def validate_body(body: str) -> list:
     if not body.strip():
         return ["缺少正文，请补充正文后再生成发布包"]
+    if len(body) > MAX_BODY_CHARS:
+        return [
+            f"正文约 {len(body)} 个字符，超过 {MAX_BODY_CHARS} 个字符上限；"
+            "请先精简后再生成发布包"
+        ]
     return []
 
 
@@ -204,7 +212,7 @@ def print_confirmation(m: dict, warnings: list) -> None:
     ]
     if m.get("alt_title"):
         lines.append(f"备选标题：{m['alt_title']}")
-    lines.append(f"正文：\n{m['body']}")
+    lines.append(f"正文（{len(m['body'])} 个字符）：\n{m['body']}")
     lines.append(f"话题标签：{m['tags'] or '（缺失）'}")
     lines.append(f"封面图：{m['cover']}")
     if m.get("carousel"):
@@ -268,13 +276,21 @@ def main() -> None:
         m["alt_cover_note"] = ""
         m["source"] = ""
 
+    body_errors = validate_body(m["body"])
+    if len(m["body"]) > MAX_BODY_CHARS:
+        print(
+            f"[ERROR] {body_errors[0]}；已停止生成发布包。",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+
     outdir = Path(args.outdir) if args.outdir else (src.parent if src else Path.cwd())
     outdir.mkdir(parents=True, exist_ok=True)
     suffix = f"{m['num']}_{m['theme']}" if m["num"] else m["theme"]
     checklist = outdir / f"小红书发布操作清单_{suffix}.md"
     direct = outdir / f"小红书发布内容_直接复制版_{suffix}.txt"
     warnings += validate_title(m["title"])
-    warnings += validate_body(m["body"])
+    warnings += body_errors
     warnings += validate_tags(m["tags"])
     warnings += validate_cover(m["cover"], src.parent if src else None)
     warnings += scan_risk_candidates(m["title"], m["body"], m["tags"])
