@@ -35,6 +35,17 @@ visible_results: pending
 
 只有读取到页面证据后，才允许把 `browser_evidence_status` 改为 `confirmed`，并把 `search_state` 改为 `results` / `no_results` / `blocked`；同时必须展示实际 URL、页面标题、页面身份和前 3 条可见结果摘要。若没有这些字段，流程必须停在“站内访问证据不足”，不能继续趋势分析或生成文案。
 
+**打开不等于可读：页面读取恢复门禁**：内置浏览器打开目标页后，必须立即按“当前 URL → 页面标题 → 页面可见文本/可访问性树/DOM → 页面身份与状态 → 截图”顺序读取；不得只依据窗口出现、标签存在或导航调用返回成功来判断已访问。若读取结果为空、超时、报错或无法确认页面身份，必须进入恢复流程并逐次报告：
+
+```text
+read_attempt: 1 / 2 / 3 / 4
+read_status: success / empty / blocked / error
+read_error: 具体原因
+recovery_action: wait / reload / reopen_tab / browser_diagnostics
+```
+
+恢复顺序固定为：①等待 3-5 秒后重新读取；②刷新当前内置浏览器标签页后重新读取；③在内置浏览器新建标签页重新打开目标 URL 后重新读取；④仍失败时读取浏览器诊断信息并记录具体错误。每次尝试都必须再次读取 URL、标题、可见文本和截图；截图可见但文本/DOM 不可读时，截图就是证据，必须展示截图或绝对路径，不得直接判定“页面无法读取”。登录页、扫码页、验证码/滑块和人工确认属于 `blocked` 或等待人工处理，不是技术失败：停留在当前内置浏览器并请求用户处理，恢复前不得切换外置浏览器或桥接。四次恢复仍无法读取时，才可记录 `xhs_site_access: read_blocked`，说明全部尝试和错误，并按浏览器优先级逐级申请下一路径；不得直接启动桥接或使用通用互联网。
+
 3. **提炼概要**：从样本中区分事实、观察和假设，提炼当前时点的目标读者、痛点、内容角度、标题触发器、结构和互动动作；不得复制样本原文、封面或专属模板。
 4. **生成初稿**：按 [references/content-production.md](references/content-production.md) 生成标题、正文、话题、配图建议和视觉交接字段；没有真实材料时保留 `待补材料/待核验`。
 5. **内容预审**：按 [references/content-preflight.md](references/content-preflight.md) 检查目标、核心机制、真人材料、标题承诺和两层风险；输出 `可发 / 需修改 / 暂不建议发`。
