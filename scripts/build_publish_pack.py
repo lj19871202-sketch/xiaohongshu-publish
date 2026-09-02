@@ -7,8 +7,9 @@
 2. 直接传参：--title/--body/--tags/--cover/--theme/--num
 
 用法示例:
-    python build_publish_pack.py --source "素材.txt" --time "明天 10:10"
-    python build_publish_pack.py --title "标题" --body "正文" --tags "#话题1 #话题2" --cover "封面.jpg" --theme "主题" --num "02" --time "立即发布"
+    python build_publish_pack.py --mode image_text --source "素材.txt" --time "明天 10:10"
+    python build_publish_pack.py --mode image_text --title "标题" --body "正文" --tags "#话题1 #话题2" --cover "封面.jpg" --theme "主题" --num "02" --time "立即发布"
+    python build_publish_pack.py --mode long_form --title "长文标题" --body "较长正文" --tags "#话题1 #话题2" --cover "封面.jpg" --theme "主题" --num "03" --time "立即发布"
 """
 
 import argparse
@@ -18,6 +19,10 @@ from pathlib import Path
 
 
 MAX_BODY_CHARS = 1000
+BODY_MODES = {
+    "image_text": "图文模式",
+    "long_form": "长文模式",
+}
 
 
 def read_source(path: Path) -> str:
@@ -68,12 +73,12 @@ def validate_tags(tags: str) -> list:
     return []
 
 
-def validate_body(body: str) -> list:
+def validate_body(body: str, mode: str) -> list:
     if not body.strip():
         return ["缺少正文，请补充正文后再生成发布包"]
-    if len(body) > MAX_BODY_CHARS:
+    if mode == "image_text" and len(body) > MAX_BODY_CHARS:
         return [
-            f"正文约 {len(body)} 个字符，超过 {MAX_BODY_CHARS} 个字符上限；"
+            f"图文模式正文约 {len(body)} 个字符，超过 {MAX_BODY_CHARS} 个字符上限；"
             "请先精简后再生成发布包"
         ]
     return []
@@ -120,6 +125,8 @@ def build_checklist(m: dict) -> str:
     )
     return f"""# 第{m['num']}篇《{m['theme']}》发布操作清单
 
+> 发布模式：{m['mode_label']}（{m['body_limit']}）
+
 > 用途：在浏览器控制通道不可用时的手动发布备用清单；内容与自动化发布一致。
 
 ## 1. 素材位置
@@ -162,6 +169,7 @@ def build_direct_copy(m: dict) -> str:
     chatgpt_mode = "填好内容后先给我确认，我确认后由我手动点「发布」" if is_immediate else "设置好定时发布后先给我确认，我确认后由我手动点「定时发布」"
     chatgpt = f"""请用浏览器打开小红书创作者平台 https://creator.xiaohongshu.com/ ，先检查登录状态；如果未登录，提示我扫码。登录后新建一篇笔记并帮我填写以下内容，{chatgpt_mode}：
 
+发布模式：{m['mode_label']}（{m['body_limit']}）
 标题：{m['title']}
 
 正文：
@@ -175,29 +183,32 @@ def build_direct_copy(m: dict) -> str:
     preflight = "；".join(warnings) if warnings else "脚本未发现词面候选，但仍需人工完成上下文、证据、授权和一致性复核"
     return f"""================ 小红书第{m['num']}篇《{m['theme']}》直接复制版 ================
 
-【一、标题】（复制这一行）
+【一、发布模式】
+{m['mode_label']}（{m['body_limit']}）
+
+【二、标题】（复制这一行）
 {m['title']}
 
-【二、正文】（复制下面整段，含空行）
+【三、正文】（复制下面整段，含空行）
 {m['body']}
 
-【三、话题标签】（复制这一行）
+【四、话题标签】（复制这一行）
 {m['tags']}
 
-【四、封面图】
+【五、封面图】
 {m['cover']}
 
-【五、发布前预审提示】（不要复制到平台）
+【六、发布前预审提示】（不要复制到平台）
 {preflight}
 
-【六、发布步骤（人工操作）】
+【七、发布步骤（人工操作）】
 1. 打开 https://creator.xiaohongshu.com/ ，确认已登录（未登录先扫码）。
 2. 「创作服务 → 发布笔记」→ 上传封面图。
-3. 标题框粘贴【一】的内容；正文框粘贴【二】的内容；话题区粘贴【三】的内容。
+3. 标题框粘贴【二】的内容；正文框粘贴【三】的内容；话题区粘贴【四】的内容。
 4. 发布方式：{m['publish_time']}。
 5. {publish_action}。
 
-【七、交给 ChatGPT 半自动操作的指令】（复制下面整段，发给 ChatGPT）
+【八、交给 ChatGPT 半自动操作的指令】（复制下面整段，发给 ChatGPT）
 {chatgpt}
 
 ================ END ================
@@ -208,11 +219,12 @@ def print_confirmation(m: dict, warnings: list) -> None:
     lines = [
         "===== 发布前待确认清单 =====",
         f"序号/主题：{m['num'] or '-'} {m['theme']}",
+        f"发布模式：{m['mode_label']}（{m['body_limit']}）",
         f"标题（约 {len(m['title'])} 字）：{m['title']}",
     ]
     if m.get("alt_title"):
         lines.append(f"备选标题：{m['alt_title']}")
-    lines.append(f"正文（{len(m['body'])} 个字符）：\n{m['body']}")
+    lines.append(f"正文（{len(m['body'])} 个字符，{m['body_limit']}）：\n{m['body']}")
     lines.append(f"话题标签：{m['tags'] or '（缺失）'}")
     lines.append(f"封面图：{m['cover']}")
     if m.get("carousel"):
@@ -234,6 +246,12 @@ def main() -> None:
     parser.add_argument("--source", default=None, help="单篇素材 txt 路径（可选）")
     parser.add_argument("--title", default=None, help="标题（直传时必填）")
     parser.add_argument("--body", default=None, help="正文（直传时必填）")
+    parser.add_argument(
+        "--mode",
+        choices=tuple(BODY_MODES),
+        default="image_text",
+        help="发布模式：image_text=图文模式（正文≤1000字符），long_form=长文模式（不启用1000字符上限）",
+    )
     parser.add_argument("--tags", default=None, help="话题标签，如：#话题1 #话题2")
     parser.add_argument("--cover", default=None, help="封面图路径")
     parser.add_argument("--outdir", default=None, help="输出目录，默认素材文件所在目录（新目录约定下即 文字\\<主题>）；直传时默认当前目录")
@@ -242,7 +260,20 @@ def main() -> None:
     parser.add_argument("--theme", default=None, help="篇主题，默认取文件名下划线后部分")
     args = parser.parse_args()
 
-    m = {"publish_time": args.time, "alt_cover": "", "carousel": ""}
+    mode_label = BODY_MODES[args.mode]
+    body_limit = (
+        f"正文最多 {MAX_BODY_CHARS} 个字符"
+        if args.mode == "image_text"
+        else "正文不设本技能 1000 个字符上限"
+    )
+    m = {
+        "publish_time": args.time,
+        "alt_cover": "",
+        "carousel": "",
+        "mode": args.mode,
+        "mode_label": mode_label,
+        "body_limit": body_limit,
+    }
     warnings = []
     src = None
 
@@ -276,8 +307,8 @@ def main() -> None:
         m["alt_cover_note"] = ""
         m["source"] = ""
 
-    body_errors = validate_body(m["body"])
-    if len(m["body"]) > MAX_BODY_CHARS:
+    body_errors = validate_body(m["body"], m["mode"])
+    if m["mode"] == "image_text" and len(m["body"]) > MAX_BODY_CHARS:
         print(
             f"[ERROR] {body_errors[0]}；已停止生成发布包。",
             file=sys.stderr,
