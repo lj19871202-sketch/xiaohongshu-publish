@@ -48,7 +48,7 @@ function Find-Node {
     $cmd = Get-Command node -ErrorAction SilentlyContinue
     if ($cmd) {
         $ver = (& $cmd.Source --version 2>&1 | Out-String).Trim()
-        return @{ Path = $cmd.Source; Version = $ver; NpmFromPath = $true; BinDir = $null }
+        return @{ Path = $cmd.Source; Version = $ver }
     }
     $runtimeRoot = Join-Path $env:LOCALAPPDATA 'OpenAI\Codex\runtimes\cua_node'
     $fallback = Get-ChildItem -LiteralPath $runtimeRoot -Directory -ErrorAction SilentlyContinue |
@@ -56,9 +56,48 @@ function Find-Node {
         Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
     if ($fallback) {
         $ver = (& $fallback --version 2>&1 | Out-String).Trim()
-        return @{ Path = $fallback; Version = $ver; NpmFromPath = $false; BinDir = Split-Path -Parent $fallback }
+        return @{ Path = $fallback; Version = $ver }
     }
     return $null
+}
+
+# 查找可实际运行的 npm。Codex 运行库可能同时存在多个版本，不能只按文件名判断。
+function Find-Npm {
+    $commands = @(Get-Command npm.cmd, npm -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -Unique)
+    foreach ($candidate in $commands) {
+        try {
+            $oldErrorAction = $ErrorActionPreference
+            $ErrorActionPreference = 'SilentlyContinue'
+            $null = & $candidate --version 2>$null
+            if ($LASTEXITCODE -eq 0) { return $candidate }
+        } catch { }
+        finally { $ErrorActionPreference = $oldErrorAction }
+    }
+    $runtimeRoot = Join-Path $env:LOCALAPPDATA 'OpenAI\Codex\runtimes\cua_node'
+    $candidates = Get-ChildItem -LiteralPath $runtimeRoot -Directory -ErrorAction SilentlyContinue |
+        ForEach-Object { Join-Path $_.FullName 'bin\npm.cmd' } |
+        Where-Object { Test-Path -LiteralPath $_ }
+    foreach ($candidate in $candidates) {
+        try {
+            $oldErrorAction = $ErrorActionPreference
+            $ErrorActionPreference = 'SilentlyContinue'
+            $null = & $candidate --version 2>$null
+            if ($LASTEXITCODE -eq 0) { return $candidate }
+        } catch { }
+        finally { $ErrorActionPreference = $oldErrorAction }
+    }
+    return $null
+}
+
+# 查找本地或 Codex 运行库中的 playwright-core。
+function Find-PlaywrightModules {
+    $localModules = Join-Path $repoRoot 'node_modules'
+    if (Test-Path -LiteralPath (Join-Path $localModules 'playwright-core')) { return $localModules }
+    $runtimeRoot = Join-Path $env:LOCALAPPDATA 'OpenAI\Codex\runtimes\cua_node'
+    $fallback = Get-ChildItem -LiteralPath $runtimeRoot -Directory -ErrorAction SilentlyContinue |
+        ForEach-Object { Join-Path $_.FullName 'bin\node_modules' } |
+        Where-Object { Test-Path -LiteralPath (Join-Path $_ 'playwright-core') } | Select-Object -First 1
+    return $fallback
 }
 
 $issues = 0
@@ -83,13 +122,8 @@ $nodeInfo = Find-Node
 if ($nodeInfo) {
     $node = $nodeInfo.Path
     Write-Ok "Node.js 已找到：$($nodeInfo.Version)（$node）"
-    if ($nodeInfo.NpmFromPath) {
-        $npm = (Get-Command npm -ErrorAction SilentlyContinue).Source
-        if (-not $npm) { Write-Warn '未找到 npm（Node.js 安装可能不完整）'; $issues++ }
-    } else {
-        $npm = Join-Path $nodeInfo.BinDir 'npm.cmd'
-        if (-not (Test-Path -LiteralPath $npm)) { Write-Warn "未找到 npm：$npm"; $issues++ }
-    }
+    $npm = Find-Npm
+    if ($npm) { Write-Ok "可运行的 npm 已找到：$npm" }
 } else {
     Write-Warn '未找到 Node.js（pw-bridge.cjs 需要）'
     $issues++
@@ -110,11 +144,12 @@ else { Write-Warn '未找到 Microsoft Edge（仅浏览器自动化需要，手�
 Write-Step '检查 playwright-core ...'
 $localModules = Join-Path $repoRoot 'node_modules'
 $localPw = Join-Path $localModules 'playwright-core'
-if (-not $node) {
+$playwrightModules = Find-PlaywrightModules
+if ($playwrightModules -and -not $Force) {
+    Write-Ok "playwright-core 可用：$(Join-Path $playwrightModules 'playwright-core')"
+} elseif (-not $node) {
     Write-Warn '无 Node.js，无法安装 playwright-core'
     $issues++
-} elseif ((Test-Path -LiteralPath $localPw) -and -not $Force) {
-    Write-Ok "playwright-core 已存在：$localPw"
 } elseif ($SkipInstall) {
     Write-Warn 'playwright-core 缺失（已指定 -SkipInstall，未安装）'
     $issues++
@@ -128,6 +163,7 @@ if (-not $node) {
         Write-Fail 'npm install 失败，请检查网络后重试'
         $issues++
     } elseif (Test-Path -LiteralPath $localPw) {
+        $playwrightModules = $localModules
         Write-Ok 'playwright-core 已安装到仓库本地 node_modules'
     } else {
         Write-Fail 'npm install 结束但未找到 playwright-core'
@@ -142,8 +178,9 @@ if ($py) {
     if ($LASTEXITCODE -eq 0) { Write-Ok 'build_publish_pack.py 可运行（--help 正常）' }
     else { Write-Fail 'build_publish_pack.py 运行异常'; $issues++ }
 }
-if ($node -and (Test-Path -LiteralPath $localPw)) {
-    $check = & $node -e "require('playwright-core'); console.log('ok')" 2>&1 | Out-String
+if ($node -and $playwrightModules) {
+    $playwrightPackage = Join-Path $playwrightModules 'playwright-core'
+    $check = & $node -e "require(process.argv[1]); console.log('ok')" -- $playwrightPackage 2>&1 | Out-String
     if ($LASTEXITCODE -eq 0) { Write-Ok 'playwright-core 可正常加载' }
     else { Write-Fail "playwright-core 加载失败：$($check.Trim())"; $issues++ }
 }
