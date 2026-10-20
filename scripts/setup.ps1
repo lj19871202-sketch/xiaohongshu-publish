@@ -63,21 +63,23 @@ function Find-Node {
 
 # 查找可实际运行的 npm。Codex 运行库可能同时存在多个版本，不能只按文件名判断。
 function Find-Npm {
-    $commands = @(Get-Command npm.cmd, npm -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -Unique)
-    foreach ($candidate in $commands) {
-        try {
-            $oldErrorAction = $ErrorActionPreference
-            $ErrorActionPreference = 'SilentlyContinue'
-            $null = & $candidate --version 2>$null
-            if ($LASTEXITCODE -eq 0) { return $candidate }
-        } catch { }
-        finally { $ErrorActionPreference = $oldErrorAction }
+    # 只接受能立即运行的 npm；corepack shim 会联网下载 npm，视为不可用。
+    $commands = @(Get-Command npm.cmd, npm -ErrorAction SilentlyContinue |
+        Select-Object -ExpandProperty Source -Unique |
+        Where-Object { $_ -and ($_ -notmatch 'corepack') })
+    $runtimeRoots = @(
+        (Join-Path $env:LOCALAPPDATA 'OpenAI\Codex\runtimes\cua_node'),
+        (Join-Path $env:USERPROFILE '.cache\codex-runtimes')
+    )
+    foreach ($root in $runtimeRoots) {
+        if (-not (Test-Path -LiteralPath $root)) { continue }
+        $commands += @(
+            Get-ChildItem -LiteralPath $root -Recurse -Filter 'npm.cmd' -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -notmatch 'corepack' } |
+                Select-Object -ExpandProperty FullName
+        )
     }
-    $runtimeRoot = Join-Path $env:LOCALAPPDATA 'OpenAI\Codex\runtimes\cua_node'
-    $candidates = Get-ChildItem -LiteralPath $runtimeRoot -Directory -ErrorAction SilentlyContinue |
-        ForEach-Object { Join-Path $_.FullName 'bin\npm.cmd' } |
-        Where-Object { Test-Path -LiteralPath $_ }
-    foreach ($candidate in $candidates) {
+    foreach ($candidate in ($commands | Select-Object -Unique)) {
         try {
             $oldErrorAction = $ErrorActionPreference
             $ErrorActionPreference = 'SilentlyContinue'
@@ -91,13 +93,25 @@ function Find-Npm {
 
 # 查找本地或 Codex 运行库中的 playwright-core。
 function Find-PlaywrightModules {
+    # 顺序：仓库本地 -> Codex cua_node 运行库 -> Codex 主运行库（.cache）。
+    # 主运行库自带 playwright-core 时无需联网 npm install，新环境更稳。
     $localModules = Join-Path $repoRoot 'node_modules'
     if (Test-Path -LiteralPath (Join-Path $localModules 'playwright-core')) { return $localModules }
-    $runtimeRoot = Join-Path $env:LOCALAPPDATA 'OpenAI\Codex\runtimes\cua_node'
-    $fallback = Get-ChildItem -LiteralPath $runtimeRoot -Directory -ErrorAction SilentlyContinue |
-        ForEach-Object { Join-Path $_.FullName 'bin\node_modules' } |
-        Where-Object { Test-Path -LiteralPath (Join-Path $_ 'playwright-core') } | Select-Object -First 1
-    return $fallback
+    $scanRoots = @(
+        (Join-Path $env:LOCALAPPDATA 'OpenAI\Codex\runtimes\cua_node'),
+        (Join-Path $env:USERPROFILE '.cache\codex-runtimes')
+    )
+    foreach ($root in $scanRoots) {
+        if (-not (Test-Path -LiteralPath $root)) { continue }
+        $candidates = @()
+        $candidates += Get-ChildItem -LiteralPath $root -Directory -ErrorAction SilentlyContinue |
+            ForEach-Object { Join-Path $_.FullName 'bin\node_modules' }
+        $candidates += Get-ChildItem -LiteralPath $root -Recurse -Directory -Filter 'playwright-core' -ErrorAction SilentlyContinue |
+            ForEach-Object { Split-Path -Parent $_.FullName }
+        $hit = $candidates | Where-Object { $_ -and (Test-Path -LiteralPath (Join-Path $_ 'playwright-core')) } | Select-Object -First 1
+        if ($hit) { return $hit }
+    }
+    return $null
 }
 
 $issues = 0
@@ -192,3 +206,5 @@ if ($issues -eq 0) {
     Write-Host "存在 $issues 项待处理，请根据上方提示补齐。" -ForegroundColor Yellow
     exit 1
 }
+
+

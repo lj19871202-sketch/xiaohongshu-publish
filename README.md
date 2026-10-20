@@ -100,7 +100,7 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 | Python 3 | `build_publish_pack.py` | 仅用标准库，无需 pip 安装任何包 |
 | Node.js | `pw-bridge.cjs` | 版本 ≥ 14 即可，需包含 npm |
 | Microsoft Edge | 浏览器自动化 | 通过调试端口驱动，无需下载 Chromium |
-| playwright-core | `pw-bridge.cjs` | 自动安装到仓库本地 `node_modules`，或自动探测 Codex 运行库 |
+| playwright-core | `pw-bridge.cjs` | 按「仓库本地 `node_modules` → Codex `cua_node` 运行库 → Codex 主运行库 `.cache\codex-runtimes`」自动探测；都缺失时才联网安装 |
 
 安装默认流程（环境检查 + 安装 `playwright-core`，需要联网）：
 
@@ -108,7 +108,6 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
 # 或：npm run setup
 ```
-
 脚本会检查上述四项是否就绪；缺失时给出提示，并用 npm 把 `playwright-core` 安装到仓库本地
 `node_modules`（需要联网），最后做加载验证。参数：`-SkipInstall`（只检查不安装）、`-Force`（强制重装）。
 
@@ -131,8 +130,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
 ```
 
 The script verifies the four items above, warns about missing ones, installs `playwright-core` into the
-repo-local `node_modules` via npm (network required), and verifies it can be loaded. Options:
-`-SkipInstall` (check only), `-Force` (reinstall).
+repo-local `node_modules` via npm (network required), and verifies it can be loaded. Options: `-SkipInstall` (check only), `-Force` (reinstall).
 
 ## 6. 使用方法 / Usage
 
@@ -329,3 +327,11 @@ the `PW_PLAYWRIGHT_MODULES` environment variable. See `references/publish-paths.
 **中文**：本项目暂未指定开源协议，仅供个人学习与内部工作流参考；如需二次发布或商用，请先与作者确认。
 
 **English**: This project does not yet specify an open-source license. It is provided as a reference workflow for personal/private use; contact the author before redistribution or commercial use.
+
+
+
+
+
+
+
+

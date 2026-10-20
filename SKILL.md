@@ -9,8 +9,8 @@ description: 小红书笔记从近30天同类内容趋势研究、内容预审�
 
 ## 安装与环境准备（默认流程）
 
-- 安装或首次使用本技能时，**默认运行** `scripts/setup.ps1`：检查 Python 3 / Node.js / Edge，并把
-  `playwright-core` 安装到仓库本地 `node_modules`（需要联网），最后做加载验证。
+- 安装或首次使用本技能时，**默认运行** `scripts/setup.ps1`：检查 Python 3 / Node.js / Edge，并解析 `playwright-core` 依赖，最后做加载验证。
+- `playwright-core` 按「仓库本地 `node_modules` → Codex `cua_node` 运行库 → Codex 主运行库 `.cache\codex-runtimes`」顺序自动探测；前两者缺失时才执行 `npm install`（需要联网）。新环境通常可直接复用 Codex 自带依赖，无需联网。
 - 仅当用户明确要求跳过或环境离线时才跳过，并在回复中说明未运行原因；检查出现 FAIL/WARN 时，先按提示补齐再进入发布流程，无法补齐的如实报告缺口。
 
 ## 标准流程
@@ -142,11 +142,15 @@ recovery_action: wait / reload / reopen_tab / browser_diagnostics
 
 ## 脚本
 
-- `scripts/setup.ps1`：安装/首次使用时默认运行——一键检查环境（Python 3 / Node.js / Edge）并把
-  `playwright-core` 安装到仓库本地 `node_modules`（需要联网）。
+- `scripts/setup.ps1`：安装/首次使用时默认运行——一键检查环境（Python 3 / Node.js / Edge），按「仓库本地 → Codex cua_node 运行库 → Codex 主运行库 `.cache\codex-runtimes`」顺序解析 `playwright-core`，仅在都缺失时才联网 `npm install`。
 - `scripts/build_publish_pack.py`：生成发布操作清单与直接复制版，执行必填/字数/文件检查，并输出风险候选警告 + 待确认清单。候选警告不等于平台判定。示例：
   - 素材文件：`python build_publish_pack.py --source "<工作区>\小红书发布素材\文字\01_工位免费3个月\01_工位免费3个月.txt" --time "明天 10:10"`（默认输出到该素材所在主题文件夹）
   - 直接传参：`python build_publish_pack.py --title "标题" --body "正文" --tags "#话题1 #话题2" --cover "封面.jpg" --theme "主题名" --num "02" --time "立即发布"`
 - `scripts/pw-bridge.cjs`：Playwright + Edge 调试端口桥接服务（js_repl 关闭时自动化发布用），用法见
   [references/publish-paths.md](references/publish-paths.md) 方案三；`playwright-core` 优先使用仓库本地
   `node_modules`，其次自动探测 Codex 运行库，也可用环境变量 `PW_PLAYWRIGHT_MODULES` 指定。
+
+
+
+
+

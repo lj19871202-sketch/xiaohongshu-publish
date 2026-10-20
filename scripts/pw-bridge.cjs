@@ -14,9 +14,16 @@ function findPlaywrightCoreModules() {
   if (process.env.LOCALAPPDATA) {
     scanRoots.push(path.join(process.env.LOCALAPPDATA, 'OpenAI', 'Codex', 'runtimes', 'cua_node'));
   }
+  const home = process.env.USERPROFILE || process.env.HOME || '';
+  if (home) {
+    // Codex 主运行库自带 playwright-core，存在时无需联网安装
+    scanRoots.push(path.join(home, '.cache', 'codex-runtimes'));
+  }
+
   for (const dir of directCandidates) {
     if (fs.existsSync(path.join(dir, 'playwright-core'))) return dir;
   }
+  // 先找 <root>\<版本>\bin\node_modules 这种固定结构
   for (const root of scanRoots) {
     let dirs = [];
     try { dirs = fs.readdirSync(root); } catch (e) { continue; }
@@ -25,7 +32,25 @@ function findPlaywrightCoreModules() {
       if (fs.existsSync(path.join(modules, 'playwright-core'))) return modules;
     }
   }
+  // 再递归兜底，兼容 <root>\<...>\dependencies\node\node_modules 等深层结构
+  for (const root of scanRoots) {
+    const found = scanForPlaywright(root, 6);
+    if (found) return found;
+  }
   throw new Error('未找到 playwright-core。请运行 scripts/setup.ps1 自动安装，或设置环境变量 PW_PLAYWRIGHT_MODULES 指向包含 playwright-core 的 node_modules 目录');
+}
+
+function scanForPlaywright(dir, depth) {
+  if (depth < 0) return null;
+  if (fs.existsSync(path.join(dir, 'playwright-core'))) return dir;
+  let entries = [];
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return null; }
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const hit = scanForPlaywright(path.join(dir, entry.name), depth - 1);
+    if (hit) return hit;
+  }
+  return null;
 }
 
 const { chromium } = require(path.join(findPlaywrightCoreModules(), 'playwright-core'));
@@ -109,3 +134,6 @@ process.on('SIGTERM', () => {
   try { if (browser) browser.close(); } catch (e) {}
   process.exit(0);
 });
+
+
+
