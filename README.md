@@ -81,14 +81,14 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 - **方式一（推荐）**：使用 skill-installer 技能从本仓库安装；
 - **方式二**：将仓库内容手动放入 Codex 技能目录，如 `~/.codex/skills/xiaohongshu-publish`（Windows：`%USERPROFILE%\.codex\skills\xiaohongshu-publish`）；
 - 安装完成后重启 Codex 会话，即可在对话中按技能流程使用。
-- **默认流程**：安装完成后运行 `scripts/setup.ps1` 完成环境检查并安装 `playwright-core`（需要联网，详见第 5 节）。
+- **默认流程**：安装完成后运行 `scripts/setup.ps1` 完成环境检查；仅在无法复用本机 Codex 运行库中的 `playwright-core` 时才联网安装（详见第 5 节）。
 
 **English**
 
 - **Option 1 (recommended)**: install via the skill-installer skill from this repository;
 - **Option 2**: copy the repository contents into a Codex skills directory, e.g. `~/.codex/skills/xiaohongshu-publish` (Windows: `%USERPROFILE%\.codex\skills\xiaohongshu-publish`);
 - Restart the Codex session after installation.
-- **Default flow**: after installation, run `scripts/setup.ps1` to check the environment and install `playwright-core` (network required; see section 5).
+- **Default flow**: after installation, run `scripts/setup.ps1` to check the environment; network installation of `playwright-core` is only needed when the local Codex runtime cannot be reused (see section 5).
 
 ## 5. 环境要求与快速安装 / Requirements & Quick Setup
 
@@ -99,7 +99,7 @@ Core principle: **fill in whatever is missing, and only generate the publish pac
 | 组件 | 用途 | 说明 |
 |---|---|---|
 | Python 3 | `build_publish_pack.py` | 仅用标准库，无需 pip 安装任何包 |
-| Node.js | `pw-bridge.cjs` | 版本 ≥ 14 即可，需包含 npm |
+| Node.js | `pw-bridge.cjs` | 版本 ≥ 20；若缺少 npm 且需首次安装依赖，还需可运行的 npm |
 | Microsoft Edge | 浏览器自动化 | 通过调试端口驱动，无需下载 Chromium |
 | playwright-core | `pw-bridge.cjs` | 按「仓库本地 `node_modules` → Codex `cua_node` 运行库 → Codex 主运行库 `.cache\codex-runtimes`」自动探测；都缺失时才联网安装 |
 
@@ -119,7 +119,7 @@ Running this skill requires:
 | Component | Used by | Notes |
 |---|---|---|
 | Python 3 | `build_publish_pack.py` | stdlib only; no pip packages needed |
-| Node.js | `pw-bridge.cjs` | ≥ 14, with npm |
+| Node.js | `pw-bridge.cjs` | ≥ 20; a working npm is also needed if dependencies must be installed |
 | Microsoft Edge | browser automation | driven via debugging port; no Chromium download |
 | playwright-core | `pw-bridge.cjs` | auto-installed into repo-local `node_modules`, or auto-detected from the Codex runtime |
 
@@ -269,7 +269,7 @@ Notes:
 `playwright-core` 安装到仓库本地 `node_modules`（需要联网）。参数：`-SkipInstall`（只检查不安装）、
 `-Force`（强制重装）。
 
-**English**: default flow at install/first use — one-command environment check & setup. It verifies Python 3 / Node.js / Edge /
+**English**: default flow at install/first use — one-command environment check & setup. It verifies Python 3 / Node.js (≥ 20) / Edge /
 `playwright-core`, warns about missing items, and auto-installs `playwright-core` into the repo-local
 `node_modules` (network required). Options: `-SkipInstall` (check only), `-Force` (reinstall).
 
@@ -279,7 +279,10 @@ Notes:
 
 - 用途：Playwright + Edge 调试端口桥接服务，HTTP 接口 `GET /health`、`POST /exec`；
 - 依赖：本机 `node.exe` 与 `playwright-core`（优先使用仓库本地 `node_modules`，其次自动探测 Codex 运行库，
-  也可通过环境变量 `PW_PLAYWRIGHT_MODULES` 指定目录）；
+  也可通过环境变量 `PW_PLAYWRIGHT_MODULES` 指定目录）；Node.js 需 ≥ 20；
+- 运行状态文件默认写入脚本目录；技能目录只读时，用 `PW_BRIDGE_STATE_DIR` 指定可写目录；
+  Edge 调试端口默认 `9222`，可用 `PW_CDP_PORT` 覆盖；
+  只读目录只适用于依赖已预装或已用 `PW_PLAYWRIGHT_MODULES` 指定的情况；
 - 详细操作见 `references/publish-paths.md` 方案三。
 
 **English**: `build_publish_pack.py` generates the publish pack from a material file or direct arguments

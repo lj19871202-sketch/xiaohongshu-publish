@@ -46,19 +46,24 @@ function Find-Python3 {
 # 查找 Node.js：优先 PATH，其次 Codex cua_node 运行库（随版本变化的目录）
 function Find-Node {
     $cmd = Get-Command node -ErrorAction SilentlyContinue
+    $candidates = @()
     if ($cmd) {
-        $ver = (& $cmd.Source --version 2>&1 | Out-String).Trim()
-        return @{ Path = $cmd.Source; Version = $ver }
+        $candidates += $cmd.Source
     }
     $runtimeRoot = Join-Path $env:LOCALAPPDATA 'OpenAI\Codex\runtimes\cua_node'
-    $fallback = Get-ChildItem -LiteralPath $runtimeRoot -Directory -ErrorAction SilentlyContinue |
+    $candidates += @(Get-ChildItem -LiteralPath $runtimeRoot -Directory -ErrorAction SilentlyContinue |
         ForEach-Object { Join-Path $_.FullName 'bin\node.exe' } |
-        Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
-    if ($fallback) {
-        $ver = (& $fallback --version 2>&1 | Out-String).Trim()
-        return @{ Path = $fallback; Version = $ver }
+        Where-Object { Test-Path -LiteralPath $_ })
+    $oldNode = $null
+    foreach ($candidate in $candidates) {
+        $ver = (& $candidate --version 2>&1 | Out-String).Trim()
+        if ($ver -match '^v?(\d+)\.') {
+            $info = @{ Path = $candidate; Version = $ver; Major = [int]$Matches[1] }
+            if ($info.Major -ge 20) { return $info }
+            if (-not $oldNode) { $oldNode = $info }
+        }
     }
-    return $null
+    return $oldNode
 }
 
 # 查找可实际运行的 npm。Codex 运行库可能同时存在多个版本，不能只按文件名判断。
@@ -133,7 +138,10 @@ Write-Step '检查 Node.js ...'
 $node = $null
 $npm = $null
 $nodeInfo = Find-Node
-if ($nodeInfo) {
+if ($nodeInfo -and $nodeInfo.Major -lt 20) {
+    Write-Warn "Node.js $($nodeInfo.Version) 版本过低；playwright-core 1.62.x 要求 Node.js ≥ 20"
+    $issues++
+} elseif ($nodeInfo) {
     $node = $nodeInfo.Path
     Write-Ok "Node.js 已找到：$($nodeInfo.Version)（$node）"
     $npm = Find-Npm

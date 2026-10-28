@@ -55,26 +55,32 @@
 **1. 启动 Edge（独立 profile + 调试端口）**
 
 ```powershell
+$cdpPort = 9222   # 被占用时改为空闲端口，并同步设置 PW_CDP_PORT
 $profile = "<工作区>\.codex-bridge\edge-profile"   # 独立配置目录，保存登录态，首次需扫码
 New-Item -ItemType Directory -Force -Path $profile | Out-Null
 Start-Process -FilePath "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" `
-  -ArgumentList "--user-data-dir=`"$profile`"","--remote-debugging-port=9222","--remote-allow-origins=*","--no-first-run","--new-window","https://creator.xiaohongshu.com/"
+  -ArgumentList "--user-data-dir=`"$profile`"","--remote-debugging-port=$cdpPort","--remote-allow-origins=*","--no-first-run","--new-window","https://creator.xiaohongshu.com/"
 Start-Sleep -Seconds 6
-Invoke-RestMethod -Uri "http://127.0.0.1:9222/json/version" -TimeoutSec 5   # 验证端口就绪
+Invoke-RestMethod -Uri "http://127.0.0.1:$cdpPort/json/version" -TimeoutSec 5   # 验证端口就绪
 ```
 
 > 注意：已有 Edge 实例无法附加调试端口，必须用 `--user-data-dir` 独立配置目录启动。
-> 端口 9222 被占用时先确认无残留进程。
+> 端口 9222 被占用时改用空闲端口，并以同一值设置 `PW_CDP_PORT`。技能目录不可写且依赖已预装时，另设
+> `PW_BRIDGE_STATE_DIR` 指向可写目录；若依赖尚未安装，仍需可写的安装目录或预先设置 `PW_PLAYWRIGHT_MODULES`。
 
 **2. 启动 Playwright 桥接服务（后台隐藏窗口）**
 
 ```powershell
 $bridgeDir = "<工作区>\.codex-bridge"
 $node = "C:\Users\<用户名>\AppData\Local\OpenAI\Codex\runtimes\cua_node\<版本>\bin\node.exe"
-Remove-Item -LiteralPath "$bridgeDir\pw.port" -Force -ErrorAction SilentlyContinue
+$stateDir = "$bridgeDir\state"
+New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
+Remove-Item -LiteralPath "$stateDir\pw.port" -Force -ErrorAction SilentlyContinue
+$env:PW_BRIDGE_STATE_DIR = $stateDir
+$env:PW_CDP_PORT = $cdpPort
 $p = Start-Process -FilePath $node -ArgumentList "`"$bridgeDir\pw-bridge.cjs`"" -WorkingDirectory $bridgeDir -WindowStyle Hidden -PassThru
 Start-Sleep -Seconds 4
-$port = Get-Content -LiteralPath "$bridgeDir\pw.port"   # 桥接 HTTP 端口
+$port = Get-Content -LiteralPath "$stateDir\pw.port"   # 桥接 HTTP 端口
 Invoke-RestMethod -Uri "http://127.0.0.1:$port/health"  # {"ok":true}
 ```
 

@@ -56,9 +56,14 @@ function scanForPlaywright(dir, depth) {
 const { chromium } = require(path.join(findPlaywrightCoreModules(), 'playwright-core'));
 
 const BRIDGE_DIR = __dirname;
-const PORT_FILE = path.join(BRIDGE_DIR, 'pw.port');
-const LOG_FILE = path.join(BRIDGE_DIR, 'pw.log');
-const CDP = 'http://127.0.0.1:9222';
+const STATE_DIR = process.env.PW_BRIDGE_STATE_DIR || BRIDGE_DIR;
+const PORT_FILE = path.join(STATE_DIR, 'pw.port');
+const LOG_FILE = path.join(STATE_DIR, 'pw.log');
+const CDP_PORT = process.env.PW_CDP_PORT || '9222';
+if (!/^\d+$/.test(CDP_PORT) || Number(CDP_PORT) < 1 || Number(CDP_PORT) > 65535) {
+  throw new Error(`PW_CDP_PORT 无效：${CDP_PORT}（应为 1-65535 的整数）`);
+}
+const CDP = `http://127.0.0.1:${CDP_PORT}`;
 
 function log(...args) {
   const line = `[${new Date().toISOString()}] ${args.join(' ')}`;
@@ -125,6 +130,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(0, '127.0.0.1', () => {
   const port = server.address().port;
+  fs.mkdirSync(STATE_DIR, { recursive: true });
   fs.writeFileSync(PORT_FILE, String(port), 'utf8');
   log('PW BRIDGE READY on port', port);
   console.log('PW_BRIDGE_READY ' + port);
